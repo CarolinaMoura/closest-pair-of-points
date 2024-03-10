@@ -12,10 +12,10 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.title = "Click to Add Points"
-        self.top = 100
-        self.left = 100
-        self.width = 400
-        self.height = 300
+        self.ini_top = 100
+        self.ini_left = 100
+        self.ini_width = 400
+        self.ini_height = 300
         self.shortestLine = None  # To store the shortest line found
         self.comparison_lines = []
         self.distance = 1000000
@@ -23,11 +23,23 @@ class Window(QMainWindow):
         self.submitClicked = False  # Flag to track if submit has been clicked
         self.timer = QTimer(self)  # Create a QTimer instance
         self.timer.timeout.connect(self.performComparison)  # Connect the timer to the comparison method
+        self.distanceLabel = None
         self.initWindow()
+
+    def center_horizontally(self, width, height, obj):
+        obj_width = obj.width()
+        obj.move((width - obj_width) // 2, round(height) - 50)
+
+    def resizeEvent(self, event):
+        width = event.size().width()
+        height = event.size().height()
+        self.center_horizontally(width, height, self.button)
+        if self.distanceLabel is not None:
+            self.center_horizontally(width, height, self.distanceLabel)
 
     def initWindow(self):
         self.setWindowTitle(self.title)
-        self.setGeometry(self.top, self.left, self.width, self.height)
+        self.setGeometry(self.ini_top, self.ini_left, self.ini_width, self.ini_height)
         
         # Create and position the submit button
         self.button = QPushButton('Submit', self)
@@ -44,12 +56,12 @@ class Window(QMainWindow):
         # Create a label to show the distance, starting with a default value
         self.distance = inf
         self.distanceLabel = QLabel(f"Best current distance: {self.distance}", self)
-        self.distanceLabel.move(100, 260)  # Position the label
-        self.distanceLabel.resize(210, 30)  # Optionally resize the label if needed
+        self.distanceLabel.resize(self.width()-20, 30)  # Optionally resize the label if needed
+        self.center_horizontally(self.width(), self.height(), self.distanceLabel)
         self.distanceLabel.show()
         self.quadratic()
-        self.solve_closest_distance()  # Call the method to solve the closest distance
-        self.timer.start(700)  # Start the timer to perform comparisons every 100ms
+        self.solve_closest_distance()
+        self.timer.start(700) 
         
     def quadratic(self):
         pts = [Point(event.x(), event.y()) for event in self.points]
@@ -57,13 +69,12 @@ class Window(QMainWindow):
         print(f"quadratic: {reply['min_distance']}")
 
     def mousePressEvent(self, event):
-        if self.submitClicked:  # Check if submit has been clicked
+        if self.submitClicked:
             return
-        # Add point where mouse is clicked
         self.points.append(event.pos())
         print(event.pos())
         print(f"Point added at: ({event.x()}, {event.y()})")
-        self.update()  # Trigger paint event
+        self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
