@@ -4,7 +4,7 @@ from PyQt5.QtGui import QPainter, QPen
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QLineF
 from PyQt5.QtCore import QTimer
-from geometry import Point, solve_closest_distance_nlog
+from geometry import Point, solve_closest_distance_nlog, solve_closest_distance_quadratic
 
 inf = 1000000
 
@@ -52,16 +52,9 @@ class Window(QMainWindow):
         self.timer.start(700)  # Start the timer to perform comparisons every 100ms
         
     def quadratic(self):
-        min_dist = inf 
-        pts = [(event.x(), event.y(), i) for i, event in enumerate(self.points)]
-        for i in range(len(pts)):
-            for j in range(i+1, len(pts)):
-                x1, y1, _ = pts[i]
-                x2, y2, _ = pts[j]
-                dist = (x1-x2)**2 + (y1-y2)**2
-                if dist < min_dist:
-                    min_dist = dist
-        print(min_dist**0.5)
+        pts = [Point(event.x(), event.y()) for event in self.points]
+        reply = solve_closest_distance_quadratic(pts, self.distance)
+        print(f"quadratic: {reply['min_distance']}")
 
     def mousePressEvent(self, event):
         if self.submitClicked:  # Check if submit has been clicked
@@ -99,7 +92,10 @@ class Window(QMainWindow):
 
     def solve_closest_distance(self):
         pts = [Point(event.x(), event.y()) for event in self.points]
-        self.comparison_lines = solve_closest_distance_nlog(pts)
+        reply = solve_closest_distance_nlog(pts, self.distance)
+        self.comparison_lines = reply["comparison_lines"]
+        print(f"nlog: {reply['min_distance']}")
+        self.update()
 
 
 if __name__ == "__main__":
