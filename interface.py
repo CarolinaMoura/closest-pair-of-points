@@ -4,7 +4,7 @@ from PyQt5.QtGui import QPainter, QPen
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QLineF
 from PyQt5.QtCore import QTimer
-from geometry import Point, solve_closest_distance_nlog, solve_closest_distance_quadratic
+from geometry import Point, solve_closest_distance_nlog_line_sweep, solve_closest_distance_nlog_divide_conquer, solve_closest_distance_quadratic
 
 inf = 1000000
 
@@ -27,6 +27,7 @@ class Window(QMainWindow):
         self.initWindow()
 
     def center_horizontally(self, width, height, obj):
+        obj.resize(min(width-20, obj.width()), obj.height())  # Optionally resize the label if needed
         obj_width = obj.width()
         obj.move((width - obj_width) // 2, round(height) - 50)
 
@@ -61,7 +62,7 @@ class Window(QMainWindow):
         self.distanceLabel.show()
         self.quadratic()
         self.solve_closest_distance()
-        self.timer.start(700) 
+        self.timer.start(300) 
         
     def quadratic(self):
         pts = [Point(event.x(), event.y()) for event in self.points]
@@ -85,8 +86,9 @@ class Window(QMainWindow):
         if self.shortestLine:
             dist, line = self.shortestLine
             pen_color = Qt.green if dist < self.distance else Qt.gray
-            self.distanceLabel.setText(f"Best current distance: {dist}")
-            self.distance = dist
+            if dist < self.distance:
+                self.distance = dist
+            self.distanceLabel.setText(f"Best current distance: {self.distance}")
             painter.setPen(QPen(pen_color, 2, Qt.SolidLine))
             painter.drawLine(line)
         
@@ -103,7 +105,7 @@ class Window(QMainWindow):
 
     def solve_closest_distance(self):
         pts = [Point(event.x(), event.y()) for event in self.points]
-        reply = solve_closest_distance_nlog(pts, self.distance)
+        reply = solve_closest_distance_nlog_divide_conquer(pts, self.distance)
         self.comparison_lines = reply["comparison_lines"]
         print(f"nlog: {reply['min_distance']}")
         self.update()

@@ -16,7 +16,49 @@ class Point:
         return f"({self.x}, {self.y})"
 
 
-def solve_closest_distance_nlog(points: List[Point], inf: float = 1000000) -> dict:
+def solve_closest_distance_nlog_divide_conquer(points: List[Point], inf: float = 1000000) -> dict:
+    points.sort()
+    for ix, pt in enumerate(points):
+        pt.id = ix
+    points_sorted_by_y = sorted(points, key=lambda x: x.y)
+    points.sort()
+    comparison_lines = []
+
+    def divide_and_conquer(points: List[Point], by_y: List[Point]) -> float:
+        if len(points) <= 1:
+            return inf
+        mid = len(points) // 2
+        mid_x = points[mid].id
+    
+        dist_left = divide_and_conquer(points[:mid], [pt for pt in by_y if pt.id <= mid_x])
+        dist_right = divide_and_conquer(points[mid:], [pt for pt in by_y if pt.id > mid_x])
+        closest_distance = min(dist_left, dist_right)
+
+        within_distance = [pt for pt in by_y if abs(pt.x - points[mid].x) < closest_distance]
+        
+        for ix,pt in enumerate(within_distance):
+            ptr = ix+1
+            while ptr < len(within_distance):
+                if within_distance[ptr].y - pt.y >= closest_distance:
+                    break
+                comparison_lines.append((closest_distance, \
+                                            (pt.x, pt.y, within_distance[ptr].x, within_distance[ptr].y)))
+                if pt.distance(within_distance[ptr]) < closest_distance:
+                    closest_distance = pt.distance(within_distance[ptr])
+                    comparison_lines.append((closest_distance, \
+                                            (pt.x, pt.y, within_distance[ptr].x, within_distance[ptr].y)))
+                ptr += 1
+        return closest_distance
+    
+    dist = divide_and_conquer(points, points_sorted_by_y)
+    return {
+        "min_distance": dist,
+        "comparison_lines": comparison_lines,
+    }
+
+
+
+def solve_closest_distance_nlog_line_sweep(points: List[Point], inf: float = 1000000) -> dict:
     points.sort()
     s = SortedSet()
     closest_distance = inf
