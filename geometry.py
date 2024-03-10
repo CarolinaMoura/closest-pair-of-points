@@ -120,5 +120,5 @@ if __name__ == "__main__":
     Point(190, 225),
     Point(253, 187)
 ]
-    print(solve_closest_distance_nlog(pts)["min_distance"])
+    print(solve_closest_distance_nlog_line_sweep(pts)["min_distance"])
     print(solve_closest_distance_quadratic(pts)["min_distance"])
