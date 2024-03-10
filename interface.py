@@ -1,10 +1,10 @@
 import sys
-from sortedcontainers import SortedSet
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel
 from PyQt5.QtGui import QPainter, QPen
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QLineF
 from PyQt5.QtCore import QTimer
+from geometry import Point, solve_closest_distance_nlog
 
 inf = 1000000
 
@@ -17,7 +17,8 @@ class Window(QMainWindow):
         self.width = 400
         self.height = 300
         self.shortestLine = None  # To store the shortest line found
-        self.comparisonLines = []
+        self.comparison_lines = []
+        self.distance = 1000000
         self.points = []  # Store the points
         self.submitClicked = False  # Flag to track if submit has been clicked
         self.timer = QTimer(self)  # Create a QTimer instance
@@ -42,13 +43,13 @@ class Window(QMainWindow):
         
         # Create a label to show the distance, starting with a default value
         self.distance = inf
-        self.distanceLabel = QLabel(f"Current distance: {self.distance}", self)
+        self.distanceLabel = QLabel(f"Best current distance: {self.distance}", self)
         self.distanceLabel.move(100, 260)  # Position the label
-        self.distanceLabel.resize(200, 30)  # Optionally resize the label if needed
+        self.distanceLabel.resize(210, 30)  # Optionally resize the label if needed
         self.distanceLabel.show()
         self.quadratic()
         self.solve_closest_distance()  # Call the method to solve the closest distance
-        self.timer.start(1000)  # Start the timer to perform comparisons every 100ms
+        self.timer.start(700)  # Start the timer to perform comparisons every 100ms
         
     def quadratic(self):
         min_dist = inf 
@@ -78,51 +79,27 @@ class Window(QMainWindow):
             painter.drawPoint(point)
 
         if self.shortestLine:
-            dist, pen_color, line = self.shortestLine
-            self.distanceLabel.setText(f"Current distance: {dist}")
+            dist, line = self.shortestLine
+            pen_color = Qt.green if dist < self.distance else Qt.gray
+            self.distanceLabel.setText(f"Best current distance: {dist}")
+            self.distance = dist
             painter.setPen(QPen(pen_color, 2, Qt.SolidLine))
             painter.drawLine(line)
         
     
     def performComparison(self):
         # Method to perform a single comparison from the list of tasks
-        if not self.comparisonLines:
+        if not self.comparison_lines:
             self.timer.stop()  # Stop the timer if there are no more tasks
             return
         
-        dist,pen_color,line = self.comparisonLines.pop(0)  # Get the first task
-        self.shortestLine = (dist,pen_color,line)
+        dist,line = self.comparison_lines.pop(0)  # Get the first task
+        self.shortestLine = (dist,QLineF(*line))  # Store the line and distance
         self.update()  # Trigger a repaint to draw the current line
 
     def solve_closest_distance(self):
-        pts = [(event.x(), event.y(), i) for i, event in enumerate(self.points)]
-        pts.sort()
-        s = SortedSet()
-        closest_distance = inf
-        self.comparisonLines.clear() 
-        for pt in pts:
-            x, y, i = pt
-            s.add((y, x, i))
-            to_delete = []
-            for delta in [-1, 1]:
-                index = s.index((y, x, i)) + delta
-                while index < len(s) and index >= 0:
-                    yy, xx, ii = s[index]
-                    if x - xx >= closest_distance:
-                        to_delete.append((yy, xx, ii))
-                        break
-                    if abs(yy - y) >= closest_distance:
-                        break
-                    cur_dis = (x - xx)**2 + (y - yy)**2
-                    cur_dis = cur_dis**0.5
-                    self.comparisonLines.append((closest_distance,Qt.gray,QLineF(x, y, xx, yy)))  # Store each comparison
-                    if cur_dis < closest_distance:
-                        closest_distance = cur_dis
-                        self.comparisonLines.append((cur_dis, Qt.green,QLineF(x, y, xx, yy)))  # Store each comparison
-                    index += delta
-            for d in to_delete:
-                s.remove(d)
-        
+        pts = [Point(event.x(), event.y()) for event in self.points]
+        self.comparison_lines = solve_closest_distance_nlog(pts)
 
 
 if __name__ == "__main__":
