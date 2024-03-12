@@ -52,6 +52,8 @@ def solve_closest_distance_nlog_divide_conquer(
             pt for pt in by_y if abs(pt.x - points[mid].x) < closest_distance
         ]
 
+        comparison_lines.append(points[mid].x)
+
         for ix, pt in enumerate(within_distance):
             ptr = ix + 1
             while ptr < len(within_distance):
