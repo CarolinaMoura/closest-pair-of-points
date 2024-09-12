@@ -12,4 +12,4 @@
 ## The app
 You may resize the window for bigger area.
 
-The app runs the closest pair of points algorithm in $O(n log n)$. It highlights in grey every comparison it makes and highlights in green every comparison that updates the current minimum answer. You may check the console output for comparison with the quadratic case.
+The app runs the closest pair of points algorithm in $O(n \log n)$. It highlights in grey every comparison it makes and highlights in green every comparison that updates the current minimum answer. You may check the console output for comparison with the quadratic case.
